@@ -12,6 +12,13 @@ ANOMALIES=(
 
 echo "=== Clearing all anomalies ==="
 
+# Verify flagd ConfigMap exists
+if ! kubectl get configmap flagd-config -n "${NAMESPACE}" &>/dev/null; then
+  echo "ERROR: flagd-config ConfigMap not found in namespace '${NAMESPACE}'."
+  echo "  Is the OTel demo deployed? Run ./setup.sh first."
+  exit 1
+fi
+
 # Reset all feature flags to disabled
 kubectl get configmap flagd-config -n "${NAMESPACE}" -o json \
   | jq '

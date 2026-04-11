@@ -20,22 +20,33 @@ Deploys a local kind cluster with the [OpenTelemetry Demo](https://opentelemetry
 # 1. Deploy the demo environment
 ./setup.sh
 
-# 2. Verify data is flowing (wait 2-3 minutes after setup)
-clickhouse client --port 9000 --query "SELECT count() FROM otel_logs"
-
-# 3. Inject an anomaly
+# 2. Inject an anomaly and seed data (no waiting needed)
 ./inject_anomaly.sh recommendationCacheFailure
+./seed_data.sh recommendationCacheFailure
 
-# 4. Wait 5-10 minutes for telemetry to accumulate
-
-# 5. Investigate with SABRE
+# 3. Investigate with SABRE
 uv run sabre
 > use clickhouse integration
 > Investigate: recommendation service is slow
 
-# 6. Clean up when done
+# 4. Clean up when done
 ./clear_anomaly.sh   # Reset anomalies
 ./teardown.sh        # Delete kind cluster
+```
+
+## Live Demo Flow
+
+For presenting to an audience — no dead air, no waiting:
+
+```bash
+./setup.sh                                     # Pre-run before the demo
+./inject_anomaly.sh recommendationCacheFailure  # "Let's inject a failure"
+./seed_data.sh recommendationCacheFailure       # "Telemetry is flowing"
+uv run sabre                                    # "Let's investigate"
+> use clickhouse integration
+> Investigate: recommendation service is slow   # SABRE does RCA live
+./clear_anomaly.sh                              # "Incident resolved"
+./teardown.sh                                   # Optional cleanup
 ```
 
 ## Available Anomalies
@@ -77,6 +88,7 @@ kind cluster (sabre-ch-demo)
 |--------|-------------|
 | `setup.sh` | Create kind cluster, deploy ClickHouse + bridge + OTel demo |
 | `inject_anomaly.sh <name>` | Enable a feature flag to inject an anomaly |
+| `seed_data.sh [name]` | Seed realistic anomaly telemetry into ClickHouse (instant, no waiting) |
 | `clear_anomaly.sh` | Disable all anomaly feature flags |
 | `teardown.sh` | Delete the kind cluster |
 

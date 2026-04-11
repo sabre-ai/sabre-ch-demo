@@ -43,6 +43,13 @@ fi
 
 echo "=== Injecting anomaly: ${ANOMALY} ==="
 
+# Verify flagd ConfigMap exists
+if ! kubectl get configmap flagd-config -n "${NAMESPACE}" &>/dev/null; then
+  echo "ERROR: flagd-config ConfigMap not found in namespace '${NAMESPACE}'."
+  echo "  Is the OTel demo deployed? Run ./setup.sh first."
+  exit 1
+fi
+
 # Patch flagd ConfigMap to enable the feature flag
 kubectl get configmap flagd-config -n "${NAMESPACE}" -o json \
   | jq --arg flag "$ANOMALY" '

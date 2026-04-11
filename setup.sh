@@ -15,6 +15,14 @@ for cmd in kubectl helm kind; do
   fi
 done
 
+# Check port 9000 is available (ClickHouse native protocol)
+if lsof -i :9000 -P -n &>/dev/null; then
+  echo "ERROR: Port 9000 is already in use."
+  echo "  Check what's using it: lsof -i :9000"
+  echo "  If a previous demo is running: ./teardown.sh"
+  exit 1
+fi
+
 # --- Step 1: Create kind cluster ---
 if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
   echo "[1/5] Kind cluster '${CLUSTER_NAME}' already exists, skipping creation."
