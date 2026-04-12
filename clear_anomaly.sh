@@ -19,11 +19,14 @@ if ! kubectl get configmap flagd-config -n "${NAMESPACE}" &>/dev/null; then
   exit 1
 fi
 
+# Detect the flagd config key (varies by chart version)
+FLAGD_KEY=$(kubectl get configmap flagd-config -n "${NAMESPACE}" -o json | jq -r '.data | keys[]' | head -1)
+
 # Reset all feature flags to disabled
 kubectl get configmap flagd-config -n "${NAMESPACE}" -o json \
-  | jq '
-    .data["flags.json"] = (
-      .data["flags.json"] | fromjson
+  | jq --arg key "$FLAGD_KEY" '
+    .data[$key] = (
+      .data[$key] | fromjson
       | .flags = (.flags | to_entries | map(
           .value.state = "DISABLED"
           | .value.defaultVariant = "off"

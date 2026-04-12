@@ -16,7 +16,7 @@ for cmd in kubectl helm kind; do
 done
 
 # Check port 9000 is available (ClickHouse native protocol)
-if lsof -i :9000 -P -n &>/dev/null; then
+if lsof -i :9000 -P -n 2>/dev/null | grep -q LISTEN; then
   echo "ERROR: Port 9000 is already in use."
   echo "  Check what's using it: lsof -i :9000"
   echo "  If a previous demo is running: ./teardown.sh"
@@ -194,10 +194,10 @@ spec:
           value: "1"
         resources:
           requests:
-            memory: "512Mi"
+            memory: "1Gi"
             cpu: "200m"
           limits:
-            memory: "2Gi"
+            memory: "4Gi"
         volumeMounts:
         - name: data
           mountPath: /var/lib/clickhouse
@@ -229,6 +229,7 @@ spec:
 CHEOF
 
   echo "  Waiting for ClickHouse to be ready..."
+  sleep 5  # Wait for pod to be created before waiting on condition
   kubectl wait --for=condition=Ready pod -l app=clickhouse --timeout=120s
 fi
 
@@ -336,6 +337,7 @@ spec:
 BREOF
 
   echo "  Waiting for bridge collector to be ready..."
+  sleep 5  # Wait for pod to be created before waiting on condition
   kubectl wait --for=condition=Ready pod -l app=otel-clickhouse-bridge --timeout=120s
 fi
 

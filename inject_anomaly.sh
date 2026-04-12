@@ -50,11 +50,14 @@ if ! kubectl get configmap flagd-config -n "${NAMESPACE}" &>/dev/null; then
   exit 1
 fi
 
+# Detect the flagd config key (varies by chart version)
+FLAGD_KEY=$(kubectl get configmap flagd-config -n "${NAMESPACE}" -o json | jq -r '.data | keys[]' | head -1)
+
 # Patch flagd ConfigMap to enable the feature flag
 kubectl get configmap flagd-config -n "${NAMESPACE}" -o json \
-  | jq --arg flag "$ANOMALY" '
-    .data["flags.json"] = (
-      .data["flags.json"] | fromjson
+  | jq --arg flag "$ANOMALY" --arg key "$FLAGD_KEY" '
+    .data[$key] = (
+      .data[$key] | fromjson
       | .flags[$flag].state = "ENABLED"
       | .flags[$flag].defaultVariant = "on"
       | tojson
