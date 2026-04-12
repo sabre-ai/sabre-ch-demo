@@ -47,7 +47,19 @@ All counts should be in the thousands. You should see 16 services:
 clickhouse client --port 9000 --query "SELECT DISTINCT ServiceName FROM otel_logs ORDER BY ServiceName"
 ```
 
-### Step 4: Verify SABRE works
+### Step 4: Scale down for demo stability
+
+Once data has accumulated (all counts > 1,000), scale down heavy services to free memory. ClickHouse retains all collected data — this just stops new telemetry from non-essential services so queries stay fast during the demo.
+
+```bash
+kubectl scale deploy -n otel-demo \
+  kafka fraud-detection accounting ad image-provider product-reviews email quote \
+  --replicas=0
+```
+
+This keeps the core request path running (frontend, recommendation, checkout, payment, cart, product-catalog, load-generator, shipping, flagd, otel-collector) while freeing ~2GB of memory. Without this step, the kind cluster runs out of memory and ClickHouse queries hang.
+
+### Step 5: Verify SABRE works
 
 ```bash
 sabre --cloud
@@ -56,7 +68,7 @@ sabre --cloud
 
 Confirm the integration loads (you'll see the schema and methodology). Then type `exit`.
 
-### Step 5: Verify there's something interesting to find
+### Step 6: Verify there's something interesting to find
 
 ```bash
 clickhouse client --port 9000 --query "
@@ -67,7 +79,7 @@ GROUP BY ServiceName ORDER BY p95_ms DESC LIMIT 5"
 
 You should see some services with high latency (accounting, product-reviews, load-generator typically show elevated p95). The OTel demo running on a kind cluster naturally exhibits performance variance — these are real issues, not injected.
 
-### Step 6: Keep it warm
+### Step 7: Keep it warm
 
 Leave the cluster running. When it's time to present, just open a terminal and start SABRE.
 
